@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ksy4035.mappers.boardMapper">
+
+    <sql id="search">
+        <if test="searchType != null">
+            <if test="searchType == 't'.toString()">
+                and title like CONCAT('%', #{keyword}, '%')
+            </if>
+
+            <if test="searchType == 'c'.toString()">
+                and content like CONCAT('%', #{keyword}, '%')
+            </if>
+
+            <if test="searchType == 'w'.toString()">
+                and writer like CONCAT('%', #{keyword}, '%')
+            </if>
+        </if>
+    </sql>
+
+    <select id="list" parameterType="java.util.Map" resultType="BoardDTO">
+        select b.* from (
+               select rownum as rnum, a.* from (
+                    select *
+                      from board_test
+                     order by idx desc
+               ) a
+        <![CDATA[       
+         where rownum <= #{endNum}
+        ) b
+         where rnum >= #{startNum}
+        ]]> 
+    </select>
+    
+    <select id="totalCount" resultType="int">
+        select count(*)
+          from board_test
+    </select>
+    
+    <insert id="insert" parameterType="BoardDTO">
+        insert into board_test (
+               idx
+               ,title
+               ,writer
+               ,content
+        )
+        values (
+               (select nvl(max(idx), 0)+1 from board_test)
+               ,#{title}
+               ,#{writer}
+               ,#{content} 
+        )
+        <selectKey keyProperty="idx" resultType="int">
+            select max(idx) from board_test
+        </selectKey>
+        
+    </insert>
+    
+    <select id="read" resultType="BoardDTO">
+        select * 
+          from board_test 
+         where idx = #{idx}
+    </select>
+    
+    <update id="update" parameterType="BoardDTO">
+        update board_test set
+               title = #{title}
+               ,content = #{content}
+         where idx = #{idx}         
+    </update>
+    
+    <update id="updateCount">
+        update board_test
+           set count = count + 1
+         where idx = #{idx} 
+    </update> 
+    
+    <delete id="delete">
+        delete
+          from board_test
+         where idx = #{idx} 
+    </delete> 
+    
+    <insert id="fileUpload" parameterType="FileDTO">
+        insert into file_test (
+               file_idx
+               ,org_name
+               ,file_name
+               ,file_size
+               ,file_path
+               ,idx
+        )
+        values (
+               (select nvl(max(file_idx), 0)+1 from file_test)
+               ,#{org_name}
+               ,#{file_name}
+               ,#{file_size}
+               ,#{file_path}
+               ,#{idx}
+        )
+    </insert>
+    
+    <select id="fileList" resultType="FileDTO">
+        select * 
+          from file_test
+         where idx = #{idx}
+    </select>
+    
+    <select id="fileInfo" resultType="FileDTO">
+        select *
+          from file_test
+        where file_idx = #{idx}
+    </select>
+    
+    <delete id="fileDelete">
+        delete from file_test
+         where file_idx=#{file_idx}
+    </delete>
+    
+</mapper>
